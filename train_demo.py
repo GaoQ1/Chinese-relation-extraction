@@ -22,7 +22,7 @@ train_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir
                                                         mode=nrekit.data_loader.json_file_data_loader.MODE_RELFACT_BAG,
                                                         shuffle=True)
 
-                                                        # case_sensitive=True
+
 
 test_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir, 'test.json'), 
                                                        os.path.join(dataset_dir, 'word_vec.json'),
@@ -33,14 +33,16 @@ test_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir,
 
 framework = nrekit.framework.re_framework(train_loader, test_loader)
 
-class model(nrekit.framework.re_model):
+class model(nrekit.framework.re_model): # model的定义
     encoder = "pcnn"
     selector = "att"
 
     def __init__(self, train_data_loader, batch_size, max_length=120):
         nrekit.framework.re_model.__init__(self, train_data_loader, batch_size, max_length=max_length)
+
         self.mask = tf.placeholder(dtype=tf.int32, shape=[None, max_length], name="mask")
         
+
         # Embedding
         x = nrekit.network.embedding.word_position_embedding(self.word, self.word_vec_mat, self.pos1, self.pos2)
 
@@ -75,7 +77,7 @@ class model(nrekit.framework.re_model):
         else:
             raise NotImplementedError
         
-        # Classifier
+        # Classifier 交叉熵损失求误差
         self._loss = nrekit.network.classifier.softmax_cross_entropy(self._train_logit, self.label, self.rel_tot, weights_table=self.get_weights())
  
     def loss(self):
@@ -103,4 +105,5 @@ if len(sys.argv) > 2:
 if len(sys.argv) > 3:
     model.selector = sys.argv[3]
 
-framework.train(model, ckpt_dir="checkpoint", model_name=dataset_name + "_" + model.encoder + "_" + model.selector, max_epoch=60, gpu_nums=1)
+
+framework.train(model, ckpt_dir="checkpoint", model_name=dataset_name + "_" + model.encoder + "_" + model.selector, max_epoch=6, gpu_nums=1)

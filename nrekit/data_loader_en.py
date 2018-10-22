@@ -336,32 +336,63 @@ class json_file_data_loader(file_data_loader):
                     last_relfact = cur_relfact
                     last_relfact_pos = i
                 
-                pos1 = sentence.find(head)
-                pos2 = sentence.find(tail)
+                p1 = sentence.find(' ' + head + ' ')
+                p2 = sentence.find(' ' + tail + ' ')
 
                 # p1为句子中head的位置索引，p2为句子中tail的位置索引
-                pos1 += 1
-                pos2 += 1
-                
 
+                if p1 == -1: # 可能head在sentence的头部或者尾部
+                    if sentence[:len(head) + 1] == head + " ":
+                        p1 = 0
+                    elif sentence[-len(head) - 1:] == " " + head:
+                        p1 = len(sentence) - len(head)
+                    else:
+                        p1 = 0 # shouldn't happen
+
+                else:
+                    p1 += 1
+                if p2 == -1: # 可能tail在sentence的头部或者尾部
+                    if sentence[:len(tail) + 1] == tail + " ":
+                        p2 = 0
+                    elif sentence[-len(tail) - 1:] == " " + tail:
+                        p2 = len(sentence) - len(tail)
+                    else:
+                        p2 = 0 # shouldn't happen
+                else:
+                    p2 += 1
+
+
+                words = sentence.split()
                 cur_ref_data_word = self.data_word[i]         
+                cur_pos = 0
+                pos1 = -1
+                pos2 = -1
 
                 # pos1为head的开头词在句子中的索引位置，pos2为tail的起始词在句子中的索引位置
-                for j in range(min(max_length, len(sentence))):
-                    word = sentence[j]
-                    if word in self.word2id:
-                        cur_ref_data_word[j] = self.word2id[word]
-                    else:
-                        cur_ref_data_word[j] = UNK
+                for j, word in enumerate(words):
+                    if j < max_length:
+                        if word in self.word2id:
+                            cur_ref_data_word[j] = self.word2id[word]
+                        else:
+                            cur_ref_data_word[j] = UNK
                     
+                    if cur_pos == p1:
+                        pos1 = j
+                        p1 = -1
+                    if cur_pos == p2:
+                        pos2 = j
+                        p2 = -1
+                    cur_pos += len(word) + 1
+
 
                 # 对最大长度外的单词赋值为BLANK
                 for j in range(j + 1, max_length):
                     cur_ref_data_word[j] = BLANK
                 
-                self.data_length[i] = len(sentence)  # 存储每个句子的长度，为mask做准备
+                
+                self.data_length[i] = len(words) # 存储每个句子的长度，为mask做准备
 
-                if len(sentence) > max_length:  # 对于长于max_length的单词进行舍弃
+                if len(words) > max_length: # 对于长于max_length的单词进行舍弃
                     self.data_length[i] = max_length
                 
                 if pos1 == -1 or pos2 == -1:
@@ -370,8 +401,6 @@ class json_file_data_loader(file_data_loader):
                     pos1 = max_length - 1
                 if pos2 >= max_length:
                     pos2 = max_length - 1
-                
-                
                 pos_min = min(pos1, pos2)
                 pos_max = max(pos1, pos2)
                 for j in range(max_length):
@@ -401,7 +430,6 @@ class json_file_data_loader(file_data_loader):
             if not os.path.isdir(processed_data_dir):
                 os.mkdir(processed_data_dir)
             
-
             np.save(os.path.join(processed_data_dir, name_prefix + '_word.npy'), self.data_word)
             np.save(os.path.join(processed_data_dir, name_prefix + '_pos1.npy'), self.data_pos1)
             np.save(os.path.join(processed_data_dir, name_prefix + '_pos2.npy'), self.data_pos2)

@@ -1,14 +1,20 @@
 import tensorflow as tf
 import numpy as np
+import code
+
 
 def word_embedding(word, word_vec_mat, var_scope=None, word_embedding_dim=50, add_unk_and_blank=True):
     with tf.variable_scope(var_scope or 'word_embedding', reuse=tf.AUTO_REUSE):
         word_embedding = tf.get_variable('word_embedding', initializer=word_vec_mat, dtype=tf.float32)
+
         if add_unk_and_blank:
             word_embedding = tf.concat([word_embedding,
                                         tf.get_variable("unk_word_embedding", [1, word_embedding_dim], dtype=tf.float32,
                                             initializer=tf.contrib.layers.xavier_initializer()),
                                         tf.constant(np.zeros((1, word_embedding_dim), dtype=np.float32))], 0)
+        
+        
+        
         x = tf.nn.embedding_lookup(word_embedding, word)
         return x
 
@@ -27,6 +33,13 @@ def pos_embedding(pos1, pos2, var_scope=None, pos_embedding_dim=5, max_length=12
         return x
 
 def word_position_embedding(word, word_vec_mat, pos1, pos2, var_scope=None, word_embedding_dim=50, pos_embedding_dim=5, max_length=120, add_unk_and_blank=True):
-    w_embedding = word_embedding(word, word_vec_mat, var_scope=var_scope, word_embedding_dim=word_embedding_dim, add_unk_and_blank=add_unk_and_blank)
+
+#     w_embedding = word_embedding(word, word_vec_mat, var_scope=var_scope, word_embedding_dim=word_vec_mat, add_unk_and_blank=add_unk_and_blank)
+    w_embedding = word_embedding(word, word_vec_mat, var_scope=var_scope,
+                                 word_embedding_dim=word_vec_mat.shape[1], add_unk_and_blank=add_unk_and_blank)
     p_embedding = pos_embedding(pos1, pos2, var_scope=var_scope, pos_embedding_dim=pos_embedding_dim, max_length=max_length)
+
+
+    
+
     return tf.concat([w_embedding, p_embedding], -1)

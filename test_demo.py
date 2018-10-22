@@ -4,6 +4,10 @@ import tensorflow as tf
 import sys
 import os
 import json
+import codecs
+
+import code
+
 
 dataset_name = 'nyt'
 if len(sys.argv) > 1:
@@ -25,6 +29,8 @@ test_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir,
                                                        shuffle=False)
 
 framework = nrekit.framework.re_framework(train_loader, test_loader)
+
+
 
 class model(nrekit.framework.re_model):
     encoder = "pcnn"
@@ -98,6 +104,6 @@ if len(sys.argv) > 3:
 
 auc, pred_result = framework.test(model, ckpt="./checkpoint/" + dataset_name + "_" + model.encoder + "_" + model.selector, return_result=True)
 
+
 with open('./test_result/' + dataset_name + "_" + model.encoder + "_" + model.selector + "_pred.json", 'w') as outfile:
     json.dump(pred_result, outfile)
-

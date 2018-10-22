@@ -5,6 +5,8 @@ import numpy as np
 import sys
 import time
 
+import code
+
 def average_gradients(tower_grads):
     """Calculate the average gradient for each shared variable across all towers.
 
@@ -118,7 +120,7 @@ class re_framework:
               summary_dir='./summary',
               test_result_dir='./test_result',
               learning_rate=0.5,
-              max_epoch=60,
+              max_epoch=60, # 迭代多少轮次
               pretrain_model=None,
               test_epoch=1,
               optimizer=tf.train.GradientDescentOptimizer,
@@ -132,13 +134,18 @@ class re_framework:
         self.sess = tf.Session(config=config)
         optimizer = optimizer(learning_rate)
         
+
         # Multi GPUs
-        tower_grads = []
-        tower_models = []
+        tower_grads = [] # 存储梯度
+        tower_models = [] # 存储不同GPU上的模型
+
+        
+
         for gpu_id in range(gpu_nums):
             with tf.device("/gpu:%d" % gpu_id):
                 with tf.name_scope("gpu_%d" % gpu_id):
-                    cur_model = model(self.train_data_loader, self.train_data_loader.batch_size // gpu_nums, self.train_data_loader.max_length)
+                    cur_model = model(self.train_data_loader, self.train_data_loader.batch_size // gpu_nums, self.train_data_loader.max_length) # 将模型分散开在不同的GPU上
+
                     tower_grads.append(optimizer.compute_gradients(cur_model.loss()))
                     tower_models.append(cur_model)
                     tf.add_to_collection("loss", cur_model.loss())
@@ -165,6 +172,8 @@ class re_framework:
         best_prec = None
         best_recall = None
         not_best_count = 0 # Stop training after several epochs without improvement.
+
+
         for epoch in range(max_epoch):
             print('###### Epoch ' + str(epoch) + ' ######')
             tot_correct = 0
@@ -252,6 +261,7 @@ class re_framework:
          
         for i, batch_data in enumerate(self.test_data_loader):
             iter_logit = self.one_step(self.sess, model, batch_data, [model.test_logit()])[0]
+
             iter_output = iter_logit.argmax(-1)
             iter_correct = (iter_output == batch_data['rel']).sum()
             iter_not_na_correct = np.logical_and(iter_output == batch_data['rel'], batch_data['rel'] != 0).sum()
@@ -266,7 +276,13 @@ class re_framework:
                 for rel in range(1, self.test_data_loader.rel_tot):
                     test_result.append({'score': iter_logit[idx][rel], 'flag': batch_data['multi_rel'][idx][rel]})
                     if batch_data['entpair'][idx] != "None#None":
-                        pred_result.append({'score': float(iter_logit[idx][rel]), 'entpair': batch_data['entpair'][idx].encode('utf-8'), 'relation': rel})
+
+                        
+                        code.interact(local=locals())
+
+
+                        pred_result.append({'score': float(iter_logit[idx][rel]), 'entpair': batch_data['entpair'][idx], 'relation': rel})
+
                 entpair_tot += 1 
         sorted_test_result = sorted(test_result, key=lambda x: x['score'])
         prec = []
