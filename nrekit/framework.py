@@ -5,8 +5,6 @@ import numpy as np
 import sys
 import time
 
-import code
-
 def average_gradients(tower_grads):
     """Calculate the average gradient for each shared variable across all towers.
 
@@ -258,6 +256,7 @@ class re_framework:
         entpair_tot = 0
         test_result = []
         pred_result = []
+        
          
         for i, batch_data in enumerate(self.test_data_loader):
             iter_logit = self.one_step(self.sess, model, batch_data, [model.test_logit()])[0]
@@ -273,17 +272,19 @@ class re_framework:
                 sys.stdout.write("[TEST] step %d | not NA accuracy: %f, accuracy: %f\r" % (i, float(tot_not_na_correct) / tot_not_na, float(tot_correct) / tot))
                 sys.stdout.flush()
             for idx in range(len(iter_logit)):
+                temp_result = []
                 for rel in range(1, self.test_data_loader.rel_tot):
                     test_result.append({'score': iter_logit[idx][rel], 'flag': batch_data['multi_rel'][idx][rel]})
                     if batch_data['entpair'][idx] != "None#None":
-
-                        
-                        code.interact(local=locals())
-
-
-                        pred_result.append({'score': float(iter_logit[idx][rel]), 'entpair': batch_data['entpair'][idx], 'relation': rel})
-
+                        temp_result.append({'score': float(
+                            iter_logit[idx][rel]), 'entpair': batch_data['entpair'][idx], 'relation': rel})
+                
                 entpair_tot += 1 
+                temp_result = sorted(temp_result, key=lambda x: x['score'], reverse=True)[:3]
+
+                if len(temp_result)>0:
+                    pred_result.append(temp_result)
+
         sorted_test_result = sorted(test_result, key=lambda x: x['score'])
         prec = []
         recall = [] 
@@ -302,3 +303,4 @@ class re_framework:
             return auc
         else:
             return (auc, pred_result)
+

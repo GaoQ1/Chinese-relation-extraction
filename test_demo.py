@@ -6,8 +6,6 @@ import os
 import json
 import codecs
 
-import code
-
 
 dataset_name = 'nyt'
 if len(sys.argv) > 1:
@@ -17,19 +15,13 @@ if not os.path.isdir(dataset_dir):
     raise Exception("[ERROR] Dataset dir %s doesn't exist!" % (dataset_dir))
 
 # The first 3 parameters are train / test data file name, word embedding file name and relation-id mapping file name respectively.
-train_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir, 'train.json'), 
-                                                        os.path.join(dataset_dir, 'word_vec.json'),
-                                                        os.path.join(dataset_dir, 'rel2id.json'), 
-                                                        mode=nrekit.data_loader.json_file_data_loader.MODE_RELFACT_BAG,
-                                                        shuffle=True)
 test_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir, 'test.json'), 
                                                        os.path.join(dataset_dir, 'word_vec.json'),
                                                        os.path.join(dataset_dir, 'rel2id.json'), 
                                                        mode=nrekit.data_loader.json_file_data_loader.MODE_ENTPAIR_BAG,
                                                        shuffle=False)
 
-framework = nrekit.framework.re_framework(train_loader, test_loader)
-
+framework = nrekit.framework.re_framework(None, test_loader)
 
 
 class model(nrekit.framework.re_model):
@@ -104,6 +96,21 @@ if len(sys.argv) > 3:
 
 auc, pred_result = framework.test(model, ckpt="./checkpoint/" + dataset_name + "_" + model.encoder + "_" + model.selector, return_result=True)
 
+# 加载id2entity 和id2rel的dictionary
+id2entity_file_name = os.path.join('_processed_data', 'test_id2entity.json')
+rel2id_file_name = os.path.join(dataset_dir, 'rel2id.json')
 
-with open('./test_result/' + dataset_name + "_" + model.encoder + "_" + model.selector + "_pred.json", 'w') as outfile:
-    json.dump(pred_result, outfile)
+id2entity = json.load(codecs.open(id2entity_file_name, "r", "utf-8"))
+rel2id = json.load(codecs.open(rel2id_file_name, "r", "utf-8"))
+id2rel = {rel2id[item]: item for item in rel2id.keys()}
+
+
+for list_item in pred_result:
+    for item in list_item:
+        item["entpair"] = "#".join(id2entity.get(i) for i in item["entpair"].split("#"))
+        relationid = str(item["relation"])
+        item["relation"] = id2rel.get(relationid)
+
+
+with codecs.open('./test_result/' + dataset_name + "_" + model.encoder + "_" + model.selector + "_pred.json", 'w', 'utf-8') as outfile:
+    json.dump(pred_result, outfile, ensure_ascii=False, indent=2)

@@ -6,10 +6,7 @@ import multiprocessing
 import numpy as np
 import random
 import codecs
-# import jieba
 
-
-import code
 
 class file_data_loader:
     def __next__(self):

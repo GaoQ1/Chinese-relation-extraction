@@ -6,10 +6,7 @@ import multiprocessing
 import numpy as np
 import random
 import codecs
-# import jieba
 
-
-import code
 
 class file_data_loader:
     def __next__(self):
@@ -157,6 +154,7 @@ class json_file_data_loader(file_data_loader):
         length_npy_file_name = os.path.join(processed_data_dir, name_prefix + '_length.npy')
         entpair2scope_file_name = os.path.join(processed_data_dir, name_prefix + '_entpair2scope.json')
         relfact2scope_file_name = os.path.join(processed_data_dir, name_prefix + '_relfact2scope.json')
+        id2entity_file_name = os.path.join(processed_data_dir, name_prefix + '_id2entity.json')
         word_vec_mat_file_name = os.path.join(processed_data_dir, word_vec_name_prefix + '_mat.npy')
         word2id_file_name = os.path.join(processed_data_dir, word_vec_name_prefix + '_word2id.json')
         if not os.path.exists(word_npy_file_name) or \
@@ -167,6 +165,7 @@ class json_file_data_loader(file_data_loader):
            not os.path.exists(length_npy_file_name) or \
            not os.path.exists(entpair2scope_file_name) or \
            not os.path.exists(relfact2scope_file_name) or \
+           not os.path.exists(id2entity_file_name) or \
            not os.path.exists(word_vec_mat_file_name) or \
            not os.path.exists(word2id_file_name):
             return False
@@ -179,6 +178,7 @@ class json_file_data_loader(file_data_loader):
         self.data_length = np.load(length_npy_file_name)
         self.entpair2scope = json.load(codecs.open(entpair2scope_file_name, "r", "utf-8"))
         self.relfact2scope = json.load(codecs.open(relfact2scope_file_name, "r", "utf-8"))
+        self.id2entity = json.load(codecs.open(id2entity_file_name, "r", "utf-8"))
         self.word_vec_mat = np.load(word_vec_mat_file_name)
         self.word2id = json.load(codecs.open(word2id_file_name, "r", "utf-8"))
         if self.data_word.shape[1] != self.max_length:
@@ -295,6 +295,7 @@ class json_file_data_loader(file_data_loader):
             self.instance_tot = len(self.ori_data) # 训练数据的长度
             self.entpair2scope = {} # (head, tail) -> scope
             self.relfact2scope = {} # (head, tail, relation) -> scope
+            self.id2entity = {} # id和entity的一一对应
             self.data_word = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
             self.data_pos1 = np.zeros((self.instance_tot, self.max_length), dtype=np.int32) 
             self.data_pos2 = np.zeros((self.instance_tot, self.max_length), dtype=np.int32)
@@ -392,6 +393,11 @@ class json_file_data_loader(file_data_loader):
             if last_relfact != '':
                 self.relfact2scope[last_relfact] = [last_relfact_pos, self.instance_tot]
 
+            for item in self.ori_data:
+                self.id2entity[item["head"]["id"]] = item["head"]["word"]
+                self.id2entity[item["tail"]["id"]] = item["tail"]["word"]
+
+
             print("Finish pre-processing")     
             print("Storing processed files...")
 
@@ -401,22 +407,28 @@ class json_file_data_loader(file_data_loader):
             if not os.path.isdir(processed_data_dir):
                 os.mkdir(processed_data_dir)
             
-
             np.save(os.path.join(processed_data_dir, name_prefix + '_word.npy'), self.data_word)
             np.save(os.path.join(processed_data_dir, name_prefix + '_pos1.npy'), self.data_pos1)
             np.save(os.path.join(processed_data_dir, name_prefix + '_pos2.npy'), self.data_pos2)
             np.save(os.path.join(processed_data_dir, name_prefix + '_rel.npy'), self.data_rel)
             np.save(os.path.join(processed_data_dir, name_prefix + '_mask.npy'), self.data_mask)
             np.save(os.path.join(processed_data_dir, name_prefix + '_length.npy'), self.data_length)
-            json.dump(self.entpair2scope, codecs.open(os.path.join(
-                processed_data_dir, name_prefix + '_entpair2scope.json'), 'w', "utf-8"))
-            json.dump(self.relfact2scope, codecs.open(os.path.join(
-                processed_data_dir, name_prefix + '_relfact2scope.json'), 'w', "utf-8"))
             np.save(os.path.join(processed_data_dir, word_vec_name_prefix + '_mat.npy'), self.word_vec_mat)
+
+            json.dump(self.entpair2scope, codecs.open(os.path.join(
+                processed_data_dir, name_prefix + '_entpair2scope.json'), 'w',  "utf-8"), ensure_ascii=False, indent=2)
+            json.dump(self.relfact2scope, codecs.open(os.path.join(
+                processed_data_dir, name_prefix + '_relfact2scope.json'), 'w', "utf-8"), ensure_ascii=False, indent=2)
             json.dump(self.word2id, codecs.open(os.path.join(
-                processed_data_dir, word_vec_name_prefix + '_word2id.json'), 'w', "utf-8"))
+                processed_data_dir, word_vec_name_prefix + '_word2id.json'), 'w', "utf-8"), ensure_ascii=False, indent=2)
+
+            json.dump(self.id2entity, codecs.open(os.path.join(
+                processed_data_dir, name_prefix + '_id2entity.json'), 'w', "utf-8"), ensure_ascii=False, indent=2)
+
+            
             print("Finish storing") # 完成数据的存储
 
+            # code.interact(local=locals())
 
         # Prepare for idx
         self.instance_tot = self.data_word.shape[0] # 实例的数量
