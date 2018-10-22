@@ -95,4 +95,4 @@ if len(sys.argv) > 3:
     model.selector = sys.argv[3]
 
 
-framework.train(model, ckpt_dir="checkpoint", model_name=dataset_name + "_" + model.encoder + "_" + model.selector, max_epoch=6, gpu_nums=1)
+framework.train(model, ckpt_dir="checkpoint", model_name=dataset_name + "_" + model.encoder + "_" + model.selector, max_epoch=60, gpu_nums=1)
