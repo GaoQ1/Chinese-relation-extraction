@@ -204,6 +204,7 @@ class re_framework:
 
             if (epoch + 1) % test_epoch == 0:
                 metric = self.test(model)
+
                 if metric > best_metric:
                     best_metric = metric
                     best_prec = self.cur_prec

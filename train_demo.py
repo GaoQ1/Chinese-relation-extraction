@@ -20,7 +20,13 @@ train_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir
                                                         mode=nrekit.data_loader.json_file_data_loader.MODE_RELFACT_BAG,
                                                         shuffle=True)
 
-framework = nrekit.framework.re_framework(train_loader, None)
+test_loader = nrekit.data_loader.json_file_data_loader(os.path.join(dataset_dir, 'test.json'),
+                                                       os.path.join(dataset_dir, 'word_vec.json'),
+                                                       os.path.join(dataset_dir, 'rel2id.json'),
+                                                       mode=nrekit.data_loader.json_file_data_loader.MODE_ENTPAIR_BAG,
+                                                       shuffle=False)
+
+framework = nrekit.framework.re_framework(train_loader, test_loader)
 
 class model(nrekit.framework.re_model): # model的定义
     encoder = "pcnn"
