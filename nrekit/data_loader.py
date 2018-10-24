@@ -7,7 +7,6 @@ import numpy as np
 import random
 import codecs
 
-
 class file_data_loader:
     def __next__(self):
         raise NotImplementedError
@@ -144,6 +143,7 @@ class json_file_data_loader(file_data_loader):
         name_prefix = '.'.join(self.file_name.split(os.sep)[-1].split('.')[:-1])
         word_vec_name_prefix = '.'.join(self.word_vec_file_name.split(os.sep)[-1].split('.')[:-1])
         processed_data_dir = '_processed_data'
+
         if not os.path.isdir(processed_data_dir):
             return False
         word_npy_file_name = os.path.join(processed_data_dir, name_prefix + '_word.npy')
@@ -378,7 +378,7 @@ class json_file_data_loader(file_data_loader):
                 for j in range(max_length):
                     self.data_pos1[i][j] = j - pos1 + max_length # data_pos里面的值为实际索引值距离最大长度的值，相当于revert数据，将空格翻转到前面
                     self.data_pos2[i][j] = j - pos2 + max_length
-                    if j >= self.data_length[i]: # 定义mask没有单词的为0，小于pos_min为1，pos_min到pos_max之间为2，大于pos_max的为3
+                    if j >= self.data_length[i]: # 定义mask，没有单词的为0，小于pos_min为1，pos_min到pos_max之间为2，大于pos_max的为3
                         self.data_mask[i][j] = 0
                     elif j <= pos_min:
                         self.data_mask[i][j] = 1

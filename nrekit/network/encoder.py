@@ -12,6 +12,7 @@ def __piecewise_pooling__(x, mask):
     mask_embedding = tf.constant([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
     mask = tf.nn.embedding_lookup(mask_embedding, mask)
     hidden_size = x.shape[-1]
+
     x = tf.reduce_max(tf.expand_dims(mask * 100, 2) + tf.expand_dims(x, 3), axis=1) - 100
     return tf.reshape(x, [-1, hidden_size * 3])
 

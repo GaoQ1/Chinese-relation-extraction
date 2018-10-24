@@ -12,6 +12,5 @@ log_sbatch
 *.tar
 *.sh
 sbatch*
-_*
 *.ipynb
 origindata
